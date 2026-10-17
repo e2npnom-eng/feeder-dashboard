@@ -130,3 +130,5 @@ circle.ck:focus,.lg .ck:focus{outline:2px solid var(--s1)}
 #chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px}#chips:not(:empty){padding:10px 20px 0}
 .chip{background:var(--hov);color:var(--ink);border:1px solid var(--bd);border-radius:99px;padding:3px 12px;font:inherit;font-size:12px;cursor:pointer}
 .chip:hover{border-color:var(--a1)}
+#sub{font-size:13px}
+#sub b{color:var(--ink2)}
