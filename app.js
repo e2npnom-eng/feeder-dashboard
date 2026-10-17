@@ -53,7 +53,6 @@ const setType=t=>{$('ty').value=$('ty').value===t?'':t;go()};
 const setStation=n=>{const on=$('sn').value===n;$('sn').value=on?'':n;$('fd').value='';fillFilters();go()};
 const setCause=c=>{X.cause=X.cause===c?'':c;go()};
 const setHour=i=>{X.hour=X.hour===i?-1:i;go()};
-try{const c=JSON.parse(localStorage.getItem('ev-data')||'null');if(c&&c.rows&&c.updated>(D.updated||''))D=c}catch(e){}
 const feeders=sn=>[...new Set(D.rows.filter(r=>!sn||stn(r[1])===sn).map(r=>r[1]))].sort();
 const stations=()=>[...new Set(D.rows.map(r=>stn(r[1])))].sort();
 const msg=t=>{$('msg').textContent=t;clearTimeout(msgT);msgT=setTimeout(()=>$('msg').textContent='',9000)};
@@ -201,13 +200,6 @@ async function onFiles(files){
   try{localStorage.setItem('ev-data',JSON.stringify(D))}catch(e){}
   fillFilters();setRange();shown=50;renderAll();
   msg(`อ่าน ${files.length-bad.length} ไฟล์ · ${num(add.length)} แถว · เพิ่มใหม่ ${num(D.rows.length-before)}`+(skip?` · ข้าม ${skip} แถวที่อ่านวันที่/ประเภทไม่ได้`:'')+(bad.length?` · อ่านไม่ได้: ${bad.join(', ')}`:'')+' — กด "⬇ data.js" แล้ว commit เพื่อให้ทุกคนเห็น')}
-$('up').onclick=()=>$('f').click();
-$('f').onchange=e=>{onFiles([...e.target.files]);e.target.value=''};
-addEventListener('dragover',e=>{e.preventDefault();$('drop').style.display='flex'});
-addEventListener('dragleave',e=>{if(!e.relatedTarget)$('drop').style.display='none'});
-addEventListener('drop',e=>{e.preventDefault();$('drop').style.display='none';if(e.dataTransfer.files.length)onFiles([...e.dataTransfer.files])});
-$('dl').onclick=()=>{const t=`window.DATA={"updated":${JSON.stringify(D.updated)},"rows":[\n${D.rows.map(r=>JSON.stringify(r)).join(',\n')}\n]};\n`,a=h('a',{href:URL.createObjectURL(new Blob([t],{type:'text/javascript'})),download:'data.js'});a.click()};
-$('rs').onclick=()=>{try{localStorage.removeItem('ev-data')}catch(e){}location.reload()};
 
 $('sn').onchange=()=>{$('fd').value='';fillFilters();shown=50;renderAll()};
 $('yr').onchange=setYear;
