@@ -44,7 +44,8 @@ const empty=()=>h('div',{class:'empty'},'ไม่มีเหตุการณ
 const ST=STATUS.map((n,i)=>[n,['✓','▲','✖'][i],['--good','--warn','--crit'][i]]);
 const lvl=(r,l)=>l>=CFG.alarm.tl||r>=CFG.alarm.tr?2:l>=CFG.warn.tl||r>=CFG.warn.tr?1:0;
 
-let D=window.DATA||{updated:'',rows:[]},shown=50,msgT,D0='',D1='';
+const START=()=>new Date().getFullYear()+'-01-01'; // วันเริ่มต้นเริ่มต้น = 1 ม.ค. ของปีปัจจุบัน (เปลี่ยนเองทุกปี)
+let D=window.DATA||{updated:'',rows:[]},shown=50,msgT,D0='',D1='',DS='';
 const X={cause:'',hour:-1},hrOf=r=>Math.floor(+r[0].slice(11,13)/3);
 const clk=(e,f)=>{e.classList.add('ck');e.tabIndex=0;e.onclick=f;e.onkeydown=v=>{if(v.key==='Enter'||v.key===' '){v.preventDefault();f()}};return e};
 const go=()=>{shown=50;renderAll()};
@@ -62,7 +63,7 @@ function fillFilters(){const sc=$('sn').value,ss=stations();
   const cur=$('fd').value,fs=feeders($('sn').value);
   $('fd').replaceChildren(h('option',{value:''},'ทุกฟีดเดอร์'),...fs.map(f=>h('option',{value:f},f)));$('fd').value=fs.includes(cur)?cur:''}
 function setRange(){let a='',b='';for(const r of D.rows){const d=r[0].slice(0,10);if(!a||d<a)a=d;if(!b||d>b)b=d}
-  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});$('d1').value=a;$('d2').value=b;D0=a;D1=b}
+  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});{const y=START()<=b?START():b.slice(0,4)+'-01-01';DS=y>a?y:a}$('d1').value=DS;$('d2').value=b;D0=a;D1=b}
 function pickFeeder(f,t){const on=$('fd').value===f;if(!on)$('sn').value=stn(f);if(t)$('ty').value=on?'':t;fillFilters();$('fd').value=on?'':f;shown=50;renderAll()}
 
 function slice(){
@@ -73,8 +74,8 @@ function slice(){
   const okC=r=>!X.cause||cause(r[3])===X.cause,okH=r=>X.hour<0||hrOf(r)===X.hour,rng=base.filter(r=>inR(r,a,b));
   return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
 
-function renderHead(){
-  $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง')}
+function renderHead(){let a='',b='';D.rows.forEach(r=>{const d=r[0];if(!a||d<a)a=d;if(!b||d>b)b=d});
+  $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},a?`ข้อมูล ${beD(a)} – ${beD(b)}`:'ยังไม่มีข้อมูล'),' | ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง')}
 
 function renderKPI(S){
   const R=cnt(S.cur,'T/R'),L=cnt(S.cur,'T/L'),T=R+L,pR=cnt(S.prev,'T/R'),pL=cnt(S.prev,'T/L'),pc=v=>T?Math.round(v/T*100)+'% ของทั้งหมด':'—';
@@ -182,7 +183,7 @@ function renderLog(S){
 function renderChips(){const c=[];
   if(X.cause)c.push(['สาเหตุ: '+X.cause,()=>{X.cause='';go()}]);
   if(X.hour>=0)c.push([`ช่วงเวลา: ${pad(X.hour*3)}:00–${pad(X.hour*3+2)}:59`,()=>{X.hour=-1;go()}]);
-  if(D0&&($('d1').value!==D0||$('d2').value!==D1))c.push([`ช่วงวันที่: ${beD($('d1').value)} – ${beD($('d2').value)}`,()=>{setRange();go()}]);
+  if(D0&&($('d1').value!==DS||$('d2').value!==D1))c.push([`ช่วงวันที่: ${beD($('d1').value)} – ${beD($('d2').value)}`,()=>{setRange();go()}]);
   $('chips').replaceChildren(...c.map(([t,f])=>h('button',{class:'chip',title:'คลิกเพื่อล้าง',onclick:f},t+' ✕')))}
 const renderAll=()=>{const S=slice();renderHead();renderChips();renderKPI(S);renderWatch(S);renderCharts(S);renderLog(S)};
 
