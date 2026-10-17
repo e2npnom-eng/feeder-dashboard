@@ -63,7 +63,13 @@ function fillFilters(){const sc=$('sn').value,ss=stations();
   const cur=$('fd').value,fs=feeders($('sn').value);
   $('fd').replaceChildren(h('option',{value:''},'ทุกฟีดเดอร์'),...fs.map(f=>h('option',{value:f},f)));$('fd').value=fs.includes(cur)?cur:''}
 function setRange(){let a='',b='';for(const r of D.rows){const d=r[0].slice(0,10);if(!a||d<a)a=d;if(!b||d>b)b=d}
-  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});{const y=START()<=b?START():b.slice(0,4)+'-01-01';DS=y>a?y:a}$('d1').value=DS;$('d2').value=b;D0=a;D1=b}
+  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});{const y=START()<=b?START():b.slice(0,4)+'-01-01';DS=y>a?y:a}$('d1').value=DS;$('d2').value=b;D0=a;D1=b;fillYears()}
+const yrA=y=>y+'-01-01'<D0?D0:y+'-01-01',yrB=y=>y+'-12-31'>D1?D1:y+'-12-31';
+function fillYears(){const ys=[...new Set(D.rows.map(r=>r[0].slice(0,4)))].sort().reverse();
+  $('yr').replaceChildren(h('option',{value:''},'ทุกปี'),...ys.map(y=>h('option',{value:y},String(+y+543))),h('option',{value:'c',hidden:''},'กำหนดเอง'))}
+function syncYear(){const a=$('d1').value,b=$('d2').value;let v=[...$('yr').options].map(o=>o.value).find(y=>/^\d{4}$/.test(y)&&a===yrA(y)&&b===yrB(y));
+  $('yr').value=v||(a===D0&&b===D1?'':'c')}
+function setYear(){const y=$('yr').value;if(y==='c')return;$('d1').value=y?yrA(y):D0;$('d2').value=y?yrB(y):D1;go()}
 function pickFeeder(f,t){const on=$('fd').value===f;if(!on)$('sn').value=stn(f);if(t)$('ty').value=on?'':t;fillFilters();$('fd').value=on?'':f;shown=50;renderAll()}
 
 function slice(){
@@ -185,7 +191,7 @@ function renderChips(){const c=[];
   if(X.hour>=0)c.push([`ช่วงเวลา: ${pad(X.hour*3)}:00–${pad(X.hour*3+2)}:59`,()=>{X.hour=-1;go()}]);
   if(D0&&($('d1').value!==DS||$('d2').value!==D1))c.push([`ช่วงวันที่: ${beD($('d1').value)} – ${beD($('d2').value)}`,()=>{setRange();go()}]);
   $('chips').replaceChildren(...c.map(([t,f])=>h('button',{class:'chip',title:'คลิกเพื่อล้าง',onclick:f},t+' ✕')))}
-const renderAll=()=>{const S=slice();renderHead();renderChips();renderKPI(S);renderWatch(S);renderCharts(S);renderLog(S)};
+const renderAll=()=>{syncYear();const S=slice();renderHead();renderChips();renderKPI(S);renderWatch(S);renderCharts(S);renderLog(S)};
 
 async function onFiles(files){
   if(typeof XLSX==='undefined'){msg('โหลดไลบรารีอ่าน Excel ไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)');return}
@@ -204,6 +210,7 @@ $('dl').onclick=()=>{const t=`window.DATA={"updated":${JSON.stringify(D.updated)
 $('rs').onclick=()=>{try{localStorage.removeItem('ev-data')}catch(e){}location.reload()};
 
 $('sn').onchange=()=>{$('fd').value='';fillFilters();shown=50;renderAll()};
+$('yr').onchange=setYear;
 ['fd','ty','d1','d2'].forEach(i=>$(i).onchange=()=>{shown=50;renderAll()});
 $('rf').onclick=()=>{X.cause='';X.hour=-1;$('sn').value='';$('ty').value='';fillFilters();$('fd').value='';$('q').value='';setRange();shown=50;renderAll()};
 $('q').oninput=()=>{shown=50;renderLog(slice())};
