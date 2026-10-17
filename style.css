@@ -107,3 +107,14 @@ details{margin-top:8px;font-size:12px;color:var(--ink2)}summary{cursor:pointer}
 .lk{display:inline-block;width:12px;height:3px;border-radius:2px}
 #drop{display:none;position:fixed;inset:0;background:rgba(28,92,171,.85);color:#fff;font-size:22px;align-items:center;justify-content:center;z-index:30}
 @media print,(forced-colors:active){.f2{fill:url(#hatch)}.st2{stroke:CanvasText}.b2,.lk.b2{background:repeating-linear-gradient(45deg,CanvasText 0 2px,transparent 2px 5px)}}
+.tdb{min-width:140px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--page);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.tdp{position:fixed;z-index:25;width:268px;padding:10px;background:var(--surface);border:1px solid var(--bd);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.tdp[hidden]{display:none}
+.tdh{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px}.tdh b{font-size:13px}
+.tdh button{background:none;border:0;color:var(--ink);font-size:16px;padding:2px 8px;cursor:pointer;border-radius:6px}
+.tdg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.tdg i{font-style:normal;font-size:11px;color:var(--mut);padding:4px 0}
+.tdg button{background:none;border:0;color:var(--ink);padding:6px 0;border-radius:6px;font:inherit;cursor:pointer}
+.tdg button:hover:not(:disabled){background:var(--hov)}
+.tdg button:disabled{color:var(--mut);opacity:.35;cursor:default}
+.tdg button.on{background:var(--btn);color:#fff}
