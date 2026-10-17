@@ -10,7 +10,7 @@ function draw(){const{inp,y,m}=cur,v=inp.value,mn=inp.min,mx=inp.max,f=new Date(
  let h=`<div class="tdh"><button data-n="-12">«</button><button data-n="-1">‹</button><b>${M[m]} ${y+543}</b><button data-n="1">›</button><button data-n="12">»</button></div><div class="tdg">`+WD.map(w=>`<i>${w}</i>`).join('')+'<span></span>'.repeat(f);
  for(let d=1;d<=n;d++){const s=`${y}-${p(m+1)}-${p(d)}`;h+=`<button data-d="${s}"${(mn&&s<mn)||(mx&&s>mx)?' disabled':''}${s===v?' class="on"':''}>${d}</button>`}
  pop.innerHTML=h+'</div>'}
-pop.onclick=e=>{const b=e.target.closest('button');if(!b||!cur)return;
+pop.onclick=e=>{e.stopPropagation();const b=e.target.closest('button');if(!b||!cur)return;
  if(b.dataset.n){const t=cur.m+ +b.dataset.n;cur.y+=Math.floor(t/12);cur.m=(t%12+12)%12;draw()}
  else if(b.dataset.d){cur.inp.value=b.dataset.d;cur.inp.dispatchEvent(new Event('change'));close()}};
 document.addEventListener('click',e=>{if(!pop.contains(e.target))close()});
