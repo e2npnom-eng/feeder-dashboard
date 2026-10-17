@@ -44,7 +44,14 @@ const empty=()=>h('div',{class:'empty'},'ไม่มีเหตุการณ
 const ST=STATUS.map((n,i)=>[n,['✓','▲','✖'][i],['--good','--warn','--crit'][i]]);
 const lvl=(r,l)=>l>=CFG.alarm.tl||r>=CFG.alarm.tr?2:l>=CFG.warn.tl||r>=CFG.warn.tr?1:0;
 
-let D=window.DATA||{updated:'',rows:[]},shown=50,msgT,D0='';
+let D=window.DATA||{updated:'',rows:[]},shown=50,msgT,D0='',D1='';
+const X={cause:'',hour:-1},hrOf=r=>Math.floor(+r[0].slice(11,13)/3);
+const clk=(e,f)=>{e.classList.add('ck');e.tabIndex=0;e.onclick=f;e.onkeydown=v=>{if(v.key==='Enter'||v.key===' '){v.preventDefault();f()}};return e};
+const go=()=>{shown=50;renderAll()};
+const setType=t=>{$('ty').value=$('ty').value===t?'':t;go()};
+const setStation=n=>{const on=$('sn').value===n;$('sn').value=on?'':n;$('fd').value='';fillFilters();go()};
+const setCause=c=>{X.cause=X.cause===c?'':c;go()};
+const setHour=i=>{X.hour=X.hour===i?-1:i;go()};
 try{const c=JSON.parse(localStorage.getItem('ev-data')||'null');if(c&&c.rows&&c.updated>(D.updated||''))D=c}catch(e){}
 const feeders=sn=>[...new Set(D.rows.filter(r=>!sn||stn(r[1])===sn).map(r=>r[1]))].sort();
 const stations=()=>[...new Set(D.rows.map(r=>stn(r[1])))].sort();
@@ -55,15 +62,16 @@ function fillFilters(){const sc=$('sn').value,ss=stations();
   const cur=$('fd').value,fs=feeders($('sn').value);
   $('fd').replaceChildren(h('option',{value:''},'ทุกฟีดเดอร์'),...fs.map(f=>h('option',{value:f},f)));$('fd').value=fs.includes(cur)?cur:''}
 function setRange(){let a='',b='';for(const r of D.rows){const d=r[0].slice(0,10);if(!a||d<a)a=d;if(!b||d>b)b=d}
-  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});$('d1').value=a;$('d2').value=b;D0=a}
-function pickFeeder(f){const on=$('fd').value===f;if(!on)$('sn').value=stn(f);fillFilters();$('fd').value=on?'':f;shown=50;renderAll()}
+  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});$('d1').value=a;$('d2').value=b;D0=a;D1=b}
+function pickFeeder(f,t){const on=$('fd').value===f;if(!on)$('sn').value=stn(f);if(t)$('ty').value=on?'':t;fillFilters();$('fd').value=on?'':f;shown=50;renderAll()}
 
 function slice(){
   const sn=$('sn').value,fd=$('fd').value,ty=$('ty').value,a=$('d1').value||'0000-01-01',b=$('d2').value||'9999-12-31';
   const scope=D.rows.filter(r=>(!sn||stn(r[1])===sn)&&(!fd||r[1]===fd)),base=scope.filter(r=>!ty||r[2]===ty);
   const inR=(r,x,y)=>{const d=r[0].slice(0,10);return d>=x&&d<=y};
   const ok=D0&&a>=D0&&b>=a,span=ok?dayN(b)-dayN(a)+1:1,pb=ok?dFrom(dayN(a)-1):'',pa=ok?dFrom(dayN(a)-span):'';
-  return{sn,fd,ty,a,b,span,scope,base,cur:base.filter(r=>inR(r,a,b)),prev:ok?base.filter(r=>inR(r,pa,pb)):[],hasPrev:!!ok&&D0<=pa}}
+  const okC=r=>!X.cause||cause(r[3])===X.cause,okH=r=>X.hour<0||hrOf(r)===X.hour,rng=base.filter(r=>inR(r,a,b));
+  return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
 
 function renderHead(){let a='',b='';D.rows.forEach(r=>{const d=r[0];if(!a||d<a)a=d;if(!b||d>b)b=d});
   $('sub').textContent=D.rows.length?`ข้อมูล ${beD(a)} – ${beD(b)} | ${num(D.rows.length)} เหตุการณ์ · ${stations().length} สถานี · ${feeders('').length} ฟีดเดอร์ | อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`:'ยังไม่มีข้อมูล — อัพโหลดไฟล์ Excel'}
@@ -73,11 +81,11 @@ function renderKPI(S){
   const dl=(c,p)=>{if(!S.hasPrev)return null;const d=c-p;return h('span',{},h('b',{class:d>0?'up':d<0?'dn':''},d>0?'▲':d<0?'▼':'–'),` ${d>0?'+':''}${d} เทียบ ${S.span} วันก่อนหน้า (${p})`)};
   let lt='';for(const r of S.scope)if(r[2]==='T/L'&&r[0]>lt)lt=r[0];
   const ago_=lt?dayN(iso(new Date()))-dayN(lt):null,mo=Math.max(1,S.span/30.4375);
-  const tile=(lab,val,l1,l2,c)=>h('div',{class:'k',style:`--c:${c}`},h('div',{class:'kl'},lab),h('div',{class:'kv'},String(val)),h('div',{class:'ks'},l1),h('div',{class:'ks'},l2||' '));
+  const tile=(lab,val,l1,l2,c,t)=>{const e=h('div',{class:'k'+(t&&S.ty===t?' act':''),style:`--c:${c}`},h('div',{class:'kl'},lab),h('div',{class:'kv'},String(val)),h('div',{class:'ks'},l1),h('div',{class:'ks'},l2||'\u00a0'));return t==null?e:clk(e,()=>setType(t))};
   $('kpi').replaceChildren(
-    tile('เหตุการณ์ทั้งหมด',num(T),'รายการตามตัวกรอง',dl(T,pR+pL),'var(--a1)'),
-    tile(LABEL.tr,num(R),pc(R),dl(R,pR),'var(--s1)'),
-    tile(LABEL.tl,num(L),pc(L),dl(L,pL),'var(--s2)'),
+    tile('เหตุการณ์ทั้งหมด',num(T),'รายการตามตัวกรอง',dl(T,pR+pL),'var(--a1)',''),
+    tile(LABEL.tr,num(R),pc(R),dl(R,pR),'var(--s1)','T/R'),
+    tile(LABEL.tl,num(L),pc(L),dl(L,pL),'var(--s2)','T/L'),
     tile('เฉลี่ยต่อเดือน',T?(T/mo).toFixed(1):'—','ครั้ง/เดือน',lt?`T/L ล่าสุด ${ago_<=0?'วันนี้':ago_+' วันที่แล้ว'} (${beD(lt)})`:'ไม่มี T/L ในข้อมูล','var(--a2)'))}
 
 const tip=$('tip');
@@ -95,7 +103,7 @@ function hbars(el,items){
     const row=h('div',{class:'hr',tabindex:'0','aria-label':`${it.name}: T/R ${it.r}, T/L ${it.l}`},h('span',{class:'hl',title:it.name},it.name),
       h('div',{},h('div',{class:'bar',style:`width:${Math.max(t/mx*100,1.5)}%`},it.r?h('i',{class:'b1',style:`flex:${it.r}`}):null,it.l?h('i',{class:'b2',style:`flex:${it.l}`}):null)),h('span',{class:'hv'},num(t)));
     hov(row,it.name,it.only?[['b2','T/L',it.l]]:rowsRL(it.r,it.l));
-    if(it.f){row.dataset.f=it.f;row.onclick=()=>pickFeeder(it.f);row.onkeydown=e=>{if(e.key==='Enter')pickFeeder(it.f)}}
+    if(it.pick)clk(row,it.pick);if(it.act)row.classList.add('act');
     return row}):[empty()]))}
 
 function colChart(el,o){
@@ -112,7 +120,7 @@ function colChart(el,o){
     if(o.lab&&step>=24&&hr+hl)svg.append(s('text',{x:cx,y:yb-hr-hl-(hr&&hl?2:0)-5,class:'val','text-anchor':'middle'},String(o.r[i]+o.l[i])));
     if(i%k===0)svg.append(s('text',{x:cx,y:H-8,class:'tk','text-anchor':'middle'},o.short[i]));
     const hit=s('rect',{x:x0,y:m.t,width:step,height:ih,class:'hit',tabindex:'0','aria-label':`${o.labels[i]}: T/R ${o.r[i]}, T/L ${o.l[i]}`});
-    hov(hit,o.labels[i],rowsRL(o.r[i],o.l[i]),g);svg.append(hit)}
+    if(o.pick)clk(hit,()=>o.pick(i));hov(hit,o.labels[i],rowsRL(o.r[i],o.l[i]),g);svg.append(hit)}
   el.append(svg)}
 
 function donut(el,r,l){
@@ -121,9 +129,9 @@ function donut(el,r,l){
   let off=0;
   [[r,'st1','T/R','b1'],[l,'st2','T/L','b2']].forEach(([v,cls,name,b])=>{if(!v)return;const len=v/T*C;
     const c=s('circle',{cx:90,cy:90,r:R,fill:'none','stroke-width':24,class:cls,'stroke-dasharray':`${Math.max(1,len-gap)} ${C}`,'stroke-dashoffset':-off,transform:'rotate(-90 90 90)',tabindex:'0','aria-label':`${name} ${v} ครั้ง`});
-    hov(c,name,[[b,name,v]]);svg.append(c);off+=len});
+    clk(c,()=>setType(name));hov(c,name,[[b,name,v]]);svg.append(c);off+=len});
   svg.append(s('text',{x:90,y:92,class:'ctr','text-anchor':'middle'},num(T)),s('text',{x:90,y:110,class:'cts','text-anchor':'middle'},'ครั้ง'));
-  el.replaceChildren(svg,h('div',{class:'lg'},...[['b1','T/R',r],['b2','T/L',l]].map(([c,n,v])=>h('span',{},h('i',{class:'sw '+c}),n+': ',h('b',{},num(v)),` (${T?Math.round(v/T*100):0}%)`))))}
+  el.replaceChildren(svg,h('div',{class:'lg'},...[['b1','T/R',r],['b2','T/L',l]].map(([c,n,v])=>clk(h('span',{},h('i',{class:'sw '+c}),n+': ',h('b',{},num(v)),` (${T?Math.round(v/T*100):0}%)`),()=>setType(n)))))}
 
 function renderWatch(S){
   const c30=ago(CFG.days),fs=S.fd?[S.fd]:feeders(S.sn);$('wsub').textContent=`${CFG.days} วันล่าสุด`;
@@ -137,39 +145,46 @@ function renderWatch(S){
 function renderCharts(S){
   const T=S.cur.length;
   if(!T){['c-cause','c-st','c-trend','c-top','c-topl','c-hour'].forEach(i=>$(i).replaceChildren(empty()));$('c-donut').replaceChildren();['t-cause','t-trend','t-hour'].forEach(i=>$(i).replaceChildren());$('tsub').textContent='';return}
-  const grp=(keyf,namef)=>{const m=new Map();S.cur.forEach(e=>{const k=keyf(e),o=m.get(k)||{name:namef?namef(k):k,r:0,l:0};o[e[2]==='T/R'?'r':'l']++;m.set(k,o)});return[...m.entries()].map(([k,v])=>({...v,k}))};
+  const grp=(keyf,namef,src=S.cur)=>{const m=new Map();src.forEach(e=>{const k=keyf(e),o=m.get(k)||{name:namef?namef(k):k,r:0,l:0};o[e[2]==='T/R'?'r':'l']++;m.set(k,o)});return[...m.entries()].map(([k,v])=>({...v,k}))};
   const tot=a=>a.r+a.l;
   // สาเหตุ
-  const causes=grp(e=>cause(e[3])).sort((a,b)=>tot(b)-tot(a));hbars($('c-cause'),causes);
+  const causes=grp(e=>cause(e[3]),null,S.forCause).sort((a,b)=>tot(b)-tot(a));hbars($('c-cause'),causes.map(i=>({...i,pick:()=>setCause(i.k),act:X.cause===i.k})));
   tdet('t-cause',['หมวด','T/R','T/L','รวม'],causes.map(i=>[i.name,i.r,i.l,tot(i)]));
   // donut + สถานี
   donut($('c-donut'),cnt(S.cur,'T/R'),cnt(S.cur,'T/L'));
-  hbars($('c-st'),grp(e=>stn(e[1])).sort((a,b)=>tot(b)-tot(a)).slice(0,8).map(i=>({...i,name:'สถานี '+i.name})));
+  hbars($('c-st'),grp(e=>stn(e[1])).sort((a,b)=>tot(b)-tot(a)).slice(0,8).map(i=>({...i,name:'สถานี '+i.name,pick:()=>setStation(i.k),act:S.sn===i.k})));
   // แนวโน้ม
-  const daily=S.span<=45,labels=[],short=[],r=[],l=[],idx={};
-  if(daily){for(let n=dayN(S.a);n<=dayN(S.b);n++){const key=dFrom(n);idx[key]=labels.length;labels.push(beD(key));short.push(`${+key.slice(8)} ${MON[+key.slice(5,7)-1]}`);r.push(0);l.push(0)}}
+  const daily=S.span<=45,labels=[],short=[],r=[],l=[],idx={},keys=[];
+  if(daily){for(let n=dayN(S.a);n<=dayN(S.b);n++){const key=dFrom(n);idx[key]=labels.length;keys.push(key);labels.push(beD(key));short.push(`${+key.slice(8)} ${MON[+key.slice(5,7)-1]}`);r.push(0);l.push(0)}}
   else{let y=+S.a.slice(0,4),mo=+S.a.slice(5,7)-1;const ey=+S.b.slice(0,4),em=+S.b.slice(5,7)-1;
-    while(y<ey||(y===ey&&mo<=em)){idx[`${y}-${pad(mo+1)}`]=labels.length;labels.push(`${MON[mo]} ${y+543}`);short.push(`${MON[mo]} ${String(y+543).slice(2)}`);r.push(0);l.push(0);if(++mo>11){mo=0;y++}}}
+    while(y<ey||(y===ey&&mo<=em)){idx[`${y}-${pad(mo+1)}`]=labels.length;keys.push(`${y}-${pad(mo+1)}`);labels.push(`${MON[mo]} ${y+543}`);short.push(`${MON[mo]} ${String(y+543).slice(2)}`);r.push(0);l.push(0);if(++mo>11){mo=0;y++}}}
   S.cur.forEach(e=>{const i=idx[e[0].slice(0,daily?10:7)];if(i!=null)(e[2]==='T/R'?r:l)[i]++});
   $('tsub').textContent=`ต่อ${daily?'วัน':'เดือน'}`;
-  colChart($('c-trend'),{labels,short,r,l,lab:true,h:300,aria:`กราฟแท่งจำนวนเหตุการณ์ต่อ${daily?'วัน':'เดือน'} รวม ${T} ครั้ง`});
+  const pickT=i=>{const k=keys[i],a0=daily?k:k+'-01',b0=daily?k:dFrom(Date.UTC(+k.slice(0,4),+k.slice(5,7),0)/864e5),A=a0<D0?D0:a0,B=b0>D1?D1:b0;
+    if($('d1').value===A&&$('d2').value===B)setRange();else{$('d1').value=A;$('d2').value=B}go()};
+  colChart($('c-trend'),{labels,short,r,l,lab:true,h:300,pick:pickT,aria:`กราฟแท่งจำนวนเหตุการณ์ต่อ${daily?'วัน':'เดือน'} รวม ${T} ครั้ง`});
   tdet('t-trend',[daily?'วัน':'เดือน','T/R','T/L','รวม'],labels.map((x,i)=>[x,r[i],l[i],r[i]+l[i]]));
   // TOP 10
   const fm=grp(e=>e[1]);
-  hbars($('c-top'),fm.slice().sort((a,b)=>tot(b)-tot(a)||(a.name<b.name?-1:1)).slice(0,10).map(i=>({...i,f:i.k})));
-  hbars($('c-topl'),fm.filter(i=>i.l).sort((a,b)=>b.l-a.l||(a.name<b.name?-1:1)).slice(0,10).map(i=>({name:i.name,r:0,l:i.l,only:true,f:i.k})));
+  hbars($('c-top'),fm.slice().sort((a,b)=>tot(b)-tot(a)||(a.name<b.name?-1:1)).slice(0,10).map(i=>({...i,pick:()=>pickFeeder(i.k),act:S.fd===i.k})));
+  hbars($('c-topl'),fm.filter(i=>i.l).sort((a,b)=>b.l-a.l||(a.name<b.name?-1:1)).slice(0,10).map(i=>({name:i.name,r:0,l:i.l,only:true,pick:()=>pickFeeder(i.k,'T/L'),act:S.fd===i.k})));
   // ช่วงเวลา
-  const hb=grp(e=>Math.floor(+e[0].slice(11,13)/3)),hm=new Map(hb.map(x=>[x.k,x]));
-  const bands=Array.from({length:8},(_,i)=>({name:`${pad(i*3)}:00–${pad(i*3+2)}:59`,r:(hm.get(i)||{}).r||0,l:(hm.get(i)||{}).l||0}));
+  const hb=grp(hrOf,null,S.forHour),hm=new Map(hb.map(x=>[x.k,x]));
+  const bands=Array.from({length:8},(_,i)=>({name:`${pad(i*3)}:00–${pad(i*3+2)}:59`,r:(hm.get(i)||{}).r||0,l:(hm.get(i)||{}).l||0,pick:()=>setHour(i),act:X.hour===i}));
   hbars($('c-hour'),bands);tdet('t-hour',['ช่วงเวลา','T/R','T/L','รวม'],bands.map(i=>[i.name,i.r,i.l,tot(i)]))}
 
 function renderLog(S){
   const q=$('q').value.trim().toLowerCase(),rows=S.cur.filter(r=>!q||(r[1]+' '+r[3]+' '+cause(r[3])).toLowerCase().includes(q));
   $('lc').textContent=`${num(rows.length)} รายการ`;
-  $('lb').replaceChildren(...(rows.length?rows.slice(0,shown).map(r=>h('tr',{},h('td',{class:'nw'},be(r[0])),h('td',{class:'nw'},r[1]),h('td',{class:'nw'},typ(r[2])),h('td',{class:'nw'},cause(r[3])),h('td',{class:'rs'},r[3]))):[h('tr',{},h('td',{class:'empty',colspan:'5'},'ไม่พบข้อมูล'))]));
+  $('lb').replaceChildren(...(rows.length?rows.slice(0,shown).map(r=>h('tr',{},h('td',{class:'nw'},be(r[0])),clk(h('td',{class:'nw'},r[1]),()=>pickFeeder(r[1])),clk(h('td',{class:'nw'},typ(r[2])),()=>setType(r[2])),clk(h('td',{class:'nw'},cause(r[3])),()=>setCause(cause(r[3]))),h('td',{class:'rs'},r[3]))):[h('tr',{},h('td',{class:'empty',colspan:'5'},'ไม่พบข้อมูล'))]));
   $('more').style.display=rows.length>shown?'':'none';$('more').textContent=`แสดงเพิ่ม (${shown}/${num(rows.length)})`}
 
-const renderAll=()=>{const S=slice();renderHead();renderKPI(S);renderWatch(S);renderCharts(S);renderLog(S)};
+function renderChips(){const c=[];
+  if(X.cause)c.push(['สาเหตุ: '+X.cause,()=>{X.cause='';go()}]);
+  if(X.hour>=0)c.push([`ช่วงเวลา: ${pad(X.hour*3)}:00–${pad(X.hour*3+2)}:59`,()=>{X.hour=-1;go()}]);
+  if(D0&&($('d1').value!==D0||$('d2').value!==D1))c.push([`ช่วงวันที่: ${beD($('d1').value)} – ${beD($('d2').value)}`,()=>{setRange();go()}]);
+  $('chips').replaceChildren(...c.map(([t,f])=>h('button',{class:'chip',title:'คลิกเพื่อล้าง',onclick:f},t+' ✕')))}
+const renderAll=()=>{const S=slice();renderHead();renderChips();renderKPI(S);renderWatch(S);renderCharts(S);renderLog(S)};
 
 async function onFiles(files){
   if(typeof XLSX==='undefined'){msg('โหลดไลบรารีอ่าน Excel ไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)');return}
@@ -189,7 +204,7 @@ $('rs').onclick=()=>{try{localStorage.removeItem('ev-data')}catch(e){}location.r
 
 $('sn').onchange=()=>{$('fd').value='';fillFilters();shown=50;renderAll()};
 ['fd','ty','d1','d2'].forEach(i=>$(i).onchange=()=>{shown=50;renderAll()});
-$('rf').onclick=()=>{$('sn').value='';$('ty').value='';fillFilters();$('fd').value='';$('q').value='';setRange();shown=50;renderAll()};
+$('rf').onclick=()=>{X.cause='';X.hour=-1;$('sn').value='';$('ty').value='';fillFilters();$('fd').value='';$('q').value='';setRange();shown=50;renderAll()};
 $('q').oninput=()=>{shown=50;renderLog(slice())};
 $('more').onclick=()=>{shown+=50;renderLog(slice())};
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>renderCharts(slice()),150)});
