@@ -73,8 +73,8 @@ function slice(){
   const okC=r=>!X.cause||cause(r[3])===X.cause,okH=r=>X.hour<0||hrOf(r)===X.hour,rng=base.filter(r=>inR(r,a,b));
   return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
 
-function renderHead(){let a='',b='';D.rows.forEach(r=>{const d=r[0];if(!a||d<a)a=d;if(!b||d>b)b=d});
-  $('sub').textContent=D.rows.length?`ข้อมูล ${beD(a)} – ${beD(b)} | ${num(D.rows.length)} เหตุการณ์ · ${stations().length} สถานี · ${feeders('').length} ฟีดเดอร์ | อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`:'ยังไม่มีข้อมูล — อัพโหลดไฟล์ Excel'}
+function renderHead(){
+  $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง')}
 
 function renderKPI(S){
   const R=cnt(S.cur,'T/R'),L=cnt(S.cur,'T/L'),T=R+L,pR=cnt(S.prev,'T/R'),pL=cnt(S.prev,'T/L'),pc=v=>T?Math.round(v/T*100)+'% ของทั้งหมด':'—';
