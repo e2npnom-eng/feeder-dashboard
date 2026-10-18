@@ -57,7 +57,10 @@ const feeders=sn=>[...new Set(D.rows.filter(r=>!sn||stn(r[1])===sn).map(r=>r[1])
 const stations=()=>[...new Set(D.rows.map(r=>stn(r[1])))].sort();
 const msg=t=>{$('msg').textContent=t;clearTimeout(msgT);msgT=setTimeout(()=>$('msg').textContent='',9000)};
 
-function fillFilters(){const sc=$('sn').value,ss=stations();
+const PAL=['#1fb5a0','#9085e9','#e87ba4','#eda100','#8cc63f','#c05bd6','#c49a6c','#4fb0c6'];let SCM=null;
+const SC=s=>{if(!SCM)SCM=new Map(stations().map((x,i)=>[x,(typeof STCOLOR!=='undefined'&&STCOLOR[x])||PAL[i%PAL.length]]));return SCM.get(s)||'var(--mut)'};
+const sws=s=>h('i',{class:'sw',style:`background:${SC(s)};margin-right:6px`});
+function fillFilters(){SCM=null;const sc=$('sn').value,ss=stations();
   $('sn').replaceChildren(h('option',{value:''},'ทุกสถานี'),...ss.map(x=>h('option',{value:x},x)));$('sn').value=ss.includes(sc)?sc:'';
   const cur=$('fd').value,fs=feeders($('sn').value);
   $('fd').replaceChildren(h('option',{value:''},'ทุกฟีดเดอร์'),...fs.map(f=>h('option',{value:f},f)));$('fd').value=fs.includes(cur)?cur:''}
@@ -106,8 +109,8 @@ const tdet=(id,hd,rows)=>$(id).replaceChildren(tbl(hd,rows));
 function hbars(el,items){
   const mx=Math.max(1,...items.map(i=>i.r+i.l));
   el.replaceChildren(...(items.length?items.map(it=>{const t=it.r+it.l;
-    const row=h('div',{class:'hr',tabindex:'0','aria-label':`${it.name}: T/R ${it.r}, T/L ${it.l}`},h('span',{class:'hl',title:it.name},it.name),
-      h('div',{},h('div',{class:'bar',style:`width:${Math.max(t/mx*100,1.5)}%`},it.r?h('i',{class:'b1',style:`flex:${it.r}`}):null,it.l?h('i',{class:'b2',style:`flex:${it.l}`}):null)),h('span',{class:'hv'},num(t)));
+    const row=h('div',{class:'hr',tabindex:'0','aria-label':`${it.name}: T/R ${it.r}, T/L ${it.l}`},h('span',{class:'hl',title:it.name},it.sw?h('i',{class:'sw',style:`background:${it.sw};margin-right:6px`}):null,it.name),
+      h('div',{},h('div',{class:'bar',style:`width:${Math.max(t/mx*100,1.5)}%`},it.col?h('i',{style:`flex:1;background:${it.col}`}):null,it.col?null:it.r?h('i',{class:'b1',style:`flex:${it.r}`}):null,it.col?null:it.l?h('i',{class:'b2',style:`flex:${it.l}`}):null)),h('span',{class:'hv'},num(t)));
     hov(row,it.name,it.only?[['b2','T/L',it.l]]:rowsRL(it.r,it.l));
     if(it.pick)clk(row,it.pick);if(it.act)row.classList.add('act');
     return row}):[empty()]))}
@@ -144,7 +147,7 @@ function renderWatch(S){
   const L=fs.map(f=>{const rec=D.rows.filter(r=>r[1]===f&&r[0]>=c30),r=cnt(rec,'T/R'),l=cnt(rec,'T/L');return{f,r,l,lv:lvl(r,l)}}).sort((a,b)=>b.lv-a.lv||b.l-a.l||b.r-a.r||(a.f<b.f?-1:1));
   const c=[0,1,2].map(i=>L.filter(x=>x.lv===i).length);
   $('c-watch').replaceChildren(h('div',{class:'ws',style:'margin-bottom:4px'},`วิกฤต ${c[2]} · เฝ้าระวัง ${c[1]} · ปกติ ${c[0]} (จาก ${L.length} ฟีดเดอร์)`),
-    ...L.slice(0,10).map(x=>{const[lab,ic,col]=ST[x.lv];return h('button',{class:'wr',onclick:()=>pickFeeder(x.f)},h('div',{},h('div',{class:'wn'},x.f),h('div',{class:'ws'},`T/R ${x.r} · T/L ${x.l}`)),h('span',{class:'st'},h('b',{style:`color:var(${col})`},ic),lab))}),
+    ...L.slice(0,10).map(x=>{const[lab,ic,col]=ST[x.lv];return h('button',{class:'wr',onclick:()=>pickFeeder(x.f)},h('div',{},h('div',{class:'wn'},sws(stn(x.f)),x.f),h('div',{class:'ws'},`T/R ${x.r} · T/L ${x.l}`)),h('span',{class:'st'},h('b',{style:`color:var(${col})`},ic),lab))}),
     L.length>10?h('div',{class:'ws',style:'margin-top:4px'},`แสดง 10 อันดับแรกจาก ${L.length} ฟีดเดอร์`):'',
     h('div',{class:'ws',style:'margin-top:8px'},`เกณฑ์: เฝ้าระวัง T/L ≥ ${CFG.warn.tl} หรือ T/R ≥ ${CFG.warn.tr} · วิกฤต T/L ≥ ${CFG.alarm.tl} หรือ T/R ≥ ${CFG.alarm.tr}`))}
 
@@ -158,7 +161,7 @@ function renderCharts(S){
   tdet('t-cause',['หมวด','T/R','T/L','รวม'],causes.map(i=>[i.name,i.r,i.l,tot(i)]));
   // donut + สถานี
   donut($('c-donut'),cnt(S.cur,'T/R'),cnt(S.cur,'T/L'));
-  hbars($('c-st'),grp(e=>stn(e[1])).sort((a,b)=>tot(b)-tot(a)).slice(0,8).map(i=>({...i,name:'สถานี '+i.name,pick:()=>setStation(i.k),act:S.sn===i.k})));
+  hbars($('c-st'),grp(e=>stn(e[1])).sort((a,b)=>tot(b)-tot(a)).slice(0,8).map(i=>({...i,name:i.k,col:SC(i.k),pick:()=>setStation(i.k),act:S.sn===i.k})));
   // แนวโน้ม
   const daily=S.span<=45,labels=[],short=[],r=[],l=[],idx={},keys=[];
   if(daily){for(let n=dayN(S.a);n<=dayN(S.b);n++){const key=dFrom(n);idx[key]=labels.length;keys.push(key);labels.push(beD(key));short.push(`${+key.slice(8)} ${MON[+key.slice(5,7)-1]}`);r.push(0);l.push(0)}}
@@ -172,8 +175,8 @@ function renderCharts(S){
   tdet('t-trend',[daily?'วัน':'เดือน','T/R','T/L','รวม'],labels.map((x,i)=>[x,r[i],l[i],r[i]+l[i]]));
   // TOP 10
   const fm=grp(e=>e[1]);
-  hbars($('c-top'),fm.slice().sort((a,b)=>tot(b)-tot(a)||(a.name<b.name?-1:1)).slice(0,10).map(i=>({...i,pick:()=>pickFeeder(i.k),act:S.fd===i.k})));
-  hbars($('c-topl'),fm.filter(i=>i.l).sort((a,b)=>b.l-a.l||(a.name<b.name?-1:1)).slice(0,10).map(i=>({name:i.name,r:0,l:i.l,only:true,pick:()=>pickFeeder(i.k,'T/L'),act:S.fd===i.k})));
+  hbars($('c-top'),fm.slice().sort((a,b)=>tot(b)-tot(a)||(a.name<b.name?-1:1)).slice(0,10).map(i=>({...i,sw:SC(stn(i.k)),pick:()=>pickFeeder(i.k),act:S.fd===i.k})));
+  hbars($('c-topl'),fm.filter(i=>i.l).sort((a,b)=>b.l-a.l||(a.name<b.name?-1:1)).slice(0,10).map(i=>({name:i.name,r:0,l:i.l,only:true,sw:SC(stn(i.k)),pick:()=>pickFeeder(i.k,'T/L'),act:S.fd===i.k})));
   // ช่วงเวลา
   const hb=grp(hrOf,null,S.forHour),hm=new Map(hb.map(x=>[x.k,x]));
   const bands=Array.from({length:8},(_,i)=>({name:`${pad(i*3)}:00–${pad(i*3+2)}:59`,r:(hm.get(i)||{}).r||0,l:(hm.get(i)||{}).l||0,pick:()=>setHour(i),act:X.hour===i}));
@@ -182,7 +185,7 @@ function renderCharts(S){
 function renderLog(S){
   const q=$('q').value.trim().toLowerCase(),rows=S.cur.filter(r=>!q||(r[1]+' '+r[3]+' '+cause(r[3])).toLowerCase().includes(q));
   $('lc').textContent=`${num(rows.length)} รายการ`;
-  $('lb').replaceChildren(...(rows.length?rows.slice(0,shown).map(r=>h('tr',{},h('td',{class:'nw'},be(r[0])),clk(h('td',{class:'nw'},r[1]),()=>pickFeeder(r[1])),clk(h('td',{class:'nw'},typ(r[2])),()=>setType(r[2])),clk(h('td',{class:'nw'},cause(r[3])),()=>setCause(cause(r[3]))),h('td',{class:'rs'},r[3]))):[h('tr',{},h('td',{class:'empty',colspan:'5'},'ไม่พบข้อมูล'))]));
+  $('lb').replaceChildren(...(rows.length?rows.slice(0,shown).map(r=>h('tr',{},h('td',{class:'nw'},be(r[0])),clk(h('td',{class:'nw'},sws(stn(r[1])),r[1]),()=>pickFeeder(r[1])),clk(h('td',{class:'nw'},typ(r[2])),()=>setType(r[2])),clk(h('td',{class:'nw'},cause(r[3])),()=>setCause(cause(r[3]))),h('td',{class:'rs'},r[3]))):[h('tr',{},h('td',{class:'empty',colspan:'5'},'ไม่พบข้อมูล'))]));
   $('more').style.display=rows.length>shown?'':'none';$('more').textContent=`แสดงเพิ่ม (${shown}/${num(rows.length)})`}
 
 function renderChips(){const c=[];
