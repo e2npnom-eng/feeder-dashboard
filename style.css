@@ -133,3 +133,4 @@ circle.ck:focus,.lg .ck:focus{outline:2px solid var(--s1)}
 #yr{min-width:110px}
 #sub{font-size:13px}
 #sub b{color:var(--ink2)}
+.logo{background:linear-gradient(135deg,#2a78d6,#1c5cab)}
