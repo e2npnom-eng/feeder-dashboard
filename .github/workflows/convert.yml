@@ -5,9 +5,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: convert-data
+  cancel-in-progress: false
 jobs:
   convert:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,4 +21,4 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data.js
-          git diff --cached --quiet || (git commit -m "update data.js" && git push)
+          git diff --cached --quiet || (git commit -m "update data.js" && git pull --rebase -X theirs origin main && git push)
