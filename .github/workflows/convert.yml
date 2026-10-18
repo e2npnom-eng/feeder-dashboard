@@ -1,7 +1,7 @@
 name: Excel to data.js
 on:
   push:
-    paths: ["data/*.xlsx"]
+    paths: ["data/**.xlsx"]
   workflow_dispatch:
 permissions:
   contents: write
