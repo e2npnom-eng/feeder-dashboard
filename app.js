@@ -21,6 +21,8 @@ function parseWB(wb,fname){const fb=(/Event_Data_(.+?)\.xlsx?$/i.exec(fname)||[]
 const merge=(a,b)=>{const m=new Map();for(const r of a.concat(b))m.set(r[1]+'|'+r[0]+'|'+r[2],r);return[...m.values()].sort((x,y)=>x[0]<y[0]?1:x[0]>y[0]?-1:x[1]<y[1]?1:-1)};
 const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return iso(d)};
+const asOf=()=>{const d=D.updated?new Date(D.updated):new Date();return isNaN(d)?new Date():d};
+const agoRef=n=>{const d=asOf();d.setDate(d.getDate()-n);return iso(d)};
 const be=s=>`${s.slice(8,10)}/${s.slice(5,7)}/${+s.slice(0,4)+543} ${s.slice(11,16)}`;
 const beD=s=>`${+s.slice(8,10)} ${MON[+s.slice(5,7)-1]} ${+s.slice(0,4)+543}`;
 const dayN=s=>Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/864e5;
@@ -83,7 +85,9 @@ function slice(){
   return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),forSt:D.rows.filter(r=>(!ty||r[2]===ty)&&inR(r,a,b)&&okC(r)&&okH(r)),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
 
 function renderHead(){let a='',b='';D.rows.forEach(r=>{const d=r[0];if(!a||d<a)a=d;if(!b||d>b)b=d});
-  $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},a?`ข้อมูล ${beD(a)} – ${beD(b)}`:'ยังไม่มีข้อมูล'),' | ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง')}
+  $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},a?`ข้อมูล ${beD(a)} – ${beD(b)}`:'ยังไม่มีข้อมูล'),' | ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง');
+  const st=D.updated?Math.floor((Date.now()-asOf())/864e5):null;
+  $('msg').textContent=!D.rows.length?'ไม่พบข้อมูล — ตรวจสอบว่าไฟล์ data.js โหลดได้ (ลอง Ctrl+F5 หรือแจ้งผู้ดูแล)':st>7?`⚠ ข้อมูลอัพเดทล่าสุดเมื่อ ${st} วันที่แล้ว (${be(D.updated)}) — สถานะฟีดเดอร์คำนวณจากวันที่อัพเดทนั้น`:''}
 
 function renderKPI(S){
   const R=cnt(S.cur,'T/R'),L=cnt(S.cur,'T/L'),T=R+L,pR=cnt(S.prev,'T/R'),pL=cnt(S.prev,'T/L'),pc=v=>T?Math.round(v/T*100)+'% ของทั้งหมด':'—';
@@ -143,7 +147,7 @@ function donut(el,r,l){
   el.replaceChildren(svg,h('div',{class:'lg'},...[['b1','T/R',r],['b2','T/L',l]].map(([c,n,v])=>clk(h('span',{},h('i',{class:'sw '+c}),n+': ',h('b',{},num(v)),` (${T?Math.round(v/T*100):0}%)`),()=>setType(n)))))}
 
 function renderWatch(S){
-  const c30=ago(CFG.days),fs=S.fd?[S.fd]:feeders(S.sn);$('wsub').textContent=`${CFG.days} วันล่าสุด`;
+  const c30=agoRef(CFG.days),fs=S.fd?[S.fd]:feeders(S.sn);$('wsub').textContent=`${CFG.days} วันล่าสุด`;
   const L=fs.map(f=>{const rec=D.rows.filter(r=>r[1]===f&&r[0]>=c30),r=cnt(rec,'T/R'),l=cnt(rec,'T/L');return{f,r,l,lv:lvl(r,l)}}).sort((a,b)=>b.lv-a.lv||b.l-a.l||b.r-a.r||(a.f<b.f?-1:1));
   const c=[0,1,2].map(i=>L.filter(x=>x.lv===i).length);
   $('c-watch').replaceChildren(h('div',{class:'ws',style:'margin-bottom:4px'},`วิกฤต ${c[2]} · เฝ้าระวัง ${c[1]} · ปกติ ${c[0]} (จาก ${L.length} ฟีดเดอร์)`),
