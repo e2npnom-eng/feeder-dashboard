@@ -136,8 +136,5 @@ circle.ck:focus,.lg .ck:focus{outline:2px solid var(--s1)}
 .logo{background:linear-gradient(135deg,#2a78d6,#1c5cab)}
 .g3{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) minmax(0,1.25fr)}
 .dnrow{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
-.dnrow .dn-wrap{flex:0 0 auto;margin:0 auto}
-.stcol{flex:1 1 220px;min-width:0}
-.sub0{margin:0 0 6px;font-size:12px;color:var(--mut)}
-.hl .sw,.wn .sw{vertical-align:baseline}
-@media(max-width:1100px){.g3{grid-template-columns:minmax(0,1fr)}}
+.stl .sw{border-radius:50%}
+.stl .act{text-decoration:underline;text-underline-offset:4px}
