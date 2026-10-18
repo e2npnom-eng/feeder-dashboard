@@ -40,7 +40,7 @@ def kind(k, r):
 
 
 rows, seen, skipped = [], set(), 0
-files = sorted(glob.glob(os.path.join(SRC, "*.xlsx")))
+files = sorted(glob.glob(os.path.join(SRC, "**", "*.xlsx"), recursive=True))
 for f in files:
     fb = re.search(r"Event_Data_(.+?)\.xlsx$", os.path.basename(f), re.I)
     wb = load_workbook(f, read_only=True, data_only=True)
