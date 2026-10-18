@@ -139,3 +139,4 @@ circle.ck:focus,.lg .ck:focus{outline:2px solid var(--s1)}
 .stl .sw{border-radius:50%}
 .stl .act{text-decoration:underline;text-underline-offset:4px}
 .btn.lnk{margin-left:auto;text-decoration:none;display:inline-block}
+.filters{padding-right:max(20px,calc((100% - 1600px)/2 + 20px))}
