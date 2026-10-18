@@ -80,7 +80,7 @@ function slice(){
   const inR=(r,x,y)=>{const d=r[0].slice(0,10);return d>=x&&d<=y};
   const ok=D0&&a>=D0&&b>=a,span=ok?dayN(b)-dayN(a)+1:1,pb=ok?dFrom(dayN(a)-1):'',pa=ok?dFrom(dayN(a)-span):'';
   const okC=r=>!X.cause||cause(r[3])===X.cause,okH=r=>X.hour<0||hrOf(r)===X.hour,rng=base.filter(r=>inR(r,a,b));
-  return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
+  return{sn,fd,ty,a,b,span,scope,base,cur:rng.filter(r=>okC(r)&&okH(r)),forCause:rng.filter(okH),forHour:rng.filter(okC),forSt:D.rows.filter(r=>(!ty||r[2]===ty)&&inR(r,a,b)&&okC(r)&&okH(r)),prev:ok?base.filter(r=>inR(r,pa,pb)&&okC(r)&&okH(r)):[],hasPrev:!!ok&&D0<=pa}}
 
 function renderHead(){let a='',b='';D.rows.forEach(r=>{const d=r[0];if(!a||d<a)a=d;if(!b||d>b)b=d});
   $('sub').replaceChildren('การไฟฟ้าส่วนภูมิภาคจังหวัดนครพนม — ',h('b',{},a?`ข้อมูล ${beD(a)} – ${beD(b)}`:'ยังไม่มีข้อมูล'),' | ',h('b',{},`อัพเดทข้อมูล ${D.updated?be(D.updated):'—'}`),' | จัดทำโดย นายศักดิ์อนันต์ แสนเมือง')}
@@ -161,7 +161,8 @@ function renderCharts(S){
   tdet('t-cause',['หมวด','T/R','T/L','รวม'],causes.map(i=>[i.name,i.r,i.l,tot(i)]));
   // donut + สถานี
   donut($('c-donut'),cnt(S.cur,'T/R'),cnt(S.cur,'T/L'));
-  hbars($('c-st'),grp(e=>stn(e[1])).sort((a,b)=>tot(b)-tot(a)).slice(0,8).map(i=>({...i,name:i.k,col:SC(i.k),pick:()=>setStation(i.k),act:S.sn===i.k})));
+  const sl=grp(e=>stn(e[1]),null,S.forSt).sort((a,b)=>tot(b)-tot(a));
+  $('c-st').replaceChildren(h('div',{class:'lg stl'},...sl.map(i=>{const e=clk(h('span',{class:S.sn===i.k?'act':''},h('i',{class:'sw',style:`background:${SC(i.k)}`}),i.k+': ',h('b',{},num(tot(i)))),()=>setStation(i.k));hov(e,i.k,rowsRL(i.r,i.l));return e})));
   // แนวโน้ม
   const daily=S.span<=45,labels=[],short=[],r=[],l=[],idx={},keys=[];
   if(daily){for(let n=dayN(S.a);n<=dayN(S.b);n++){const key=dFrom(n);idx[key]=labels.length;keys.push(key);labels.push(beD(key));short.push(`${+key.slice(8)} ${MON[+key.slice(5,7)-1]}`);r.push(0);l.push(0)}}
