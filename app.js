@@ -46,7 +46,6 @@ const empty=()=>h('div',{class:'empty'},'ไม่มีเหตุการณ
 const ST=STATUS.map((n,i)=>[n,['✓','▲','✖'][i],['--good','--warn','--crit'][i]]);
 const lvl=(r,l)=>l>=CFG.alarm.tl||r>=CFG.alarm.tr?2:l>=CFG.warn.tl||r>=CFG.warn.tr?1:0;
 
-const START=()=>new Date().getFullYear()+'-01-01'; // วันเริ่มต้นเริ่มต้น = 1 ม.ค. ของปีปัจจุบัน (เปลี่ยนเองทุกปี)
 let D=window.DATA||{updated:'',rows:[]},shown=50,msgT,D0='',D1='',DS='';
 const X={cause:'',hour:-1},hrOf=r=>Math.floor(+r[0].slice(11,13)/3);
 const clk=(e,f)=>{e.classList.add('ck');e.tabIndex=0;e.onclick=f;e.onkeydown=v=>{if(v.key==='Enter'||v.key===' '){v.preventDefault();f()}};return e};
@@ -67,7 +66,7 @@ function fillFilters(){SCM=null;const sc=$('sn').value,ss=stations();
   const cur=$('fd').value,fs=feeders($('sn').value);
   $('fd').replaceChildren(h('option',{value:''},'ทุกฟีดเดอร์'),...fs.map(f=>h('option',{value:f},f)));$('fd').value=fs.includes(cur)?cur:''}
 function setRange(){let a='',b='';for(const r of D.rows){const d=r[0].slice(0,10);if(!a||d<a)a=d;if(!b||d>b)b=d}
-  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});{const y=START()<=b?START():b.slice(0,4)+'-01-01';DS=y>a?y:a}$('d1').value=DS;$('d2').value=b;D0=a;D1=b;fillYears()}
+  [$('d1'),$('d2')].forEach(e=>{e.min=a;e.max=b});{const y=b.slice(0,4)+'-01-01';DS=y>a?y:a}$('d1').value=DS;$('d2').value=b;D0=a;D1=b;fillYears()}
 const yrA=y=>y+'-01-01'<D0?D0:y+'-01-01',yrB=y=>y+'-12-31'>D1?D1:y+'-12-31';
 function fillYears(){const ys=[...new Set(D.rows.map(r=>r[0].slice(0,4)))].sort().reverse();
   $('yr').replaceChildren(h('option',{value:''},'ทุกปี'),...ys.map(y=>h('option',{value:y},String(+y+543))),h('option',{value:'c',hidden:''},'กำหนดเอง'))}
