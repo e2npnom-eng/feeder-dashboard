@@ -54,6 +54,8 @@ const setType=t=>{$('ty').value=$('ty').value===t?'':t;go()};
 const setStation=n=>{const on=$('sn').value===n;$('sn').value=on?'':n;$('fd').value='';fillFilters();go()};
 const setCause=c=>{X.cause=X.cause===c?'':c;go()};
 const setHour=i=>{X.hour=X.hour===i?-1:i;go()};
+// กันพลาด: รวมรหัสฟีดเดอร์เป็นตัวพิมพ์ใหญ่ไม่มีเว้นวรรค และตัดแถวซ้ำ (ฟีดเดอร์+เวลา+ประเภท) แม้ data.js จะสร้างจากตัวแปลงรุ่นเก่า
+D={...D,rows:[...D.rows.reduce((m,r)=>{const f=String(r[1]).replace(/\s+/g,'').toUpperCase(),k=f+'|'+r[0]+'|'+r[2];if(!m.has(k))m.set(k,[r[0],f,r[2],r[3]]);return m},new Map()).values()]};
 const feeders=sn=>[...new Set(D.rows.filter(r=>!sn||stn(r[1])===sn).map(r=>r[1]))].sort();
 const stations=()=>[...new Set(D.rows.map(r=>stn(r[1])))].sort();
 const msg=t=>{$('msg').textContent=t;clearTimeout(msgT);msgT=setTimeout(()=>$('msg').textContent='',9000)};
